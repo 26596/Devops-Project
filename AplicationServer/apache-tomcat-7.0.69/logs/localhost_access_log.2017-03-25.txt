@@ -1,0 +1,5 @@
+127.0.0.1 - - [25/Mar/2017:17:15:25 +0530] "GET /hello HTTP/1.1" 302 -
+127.0.0.1 - - [25/Mar/2017:17:15:25 +0530] "GET /hello/ HTTP/1.1" 304 -
+127.0.0.1 - - [25/Mar/2017:17:15:25 +0530] "GET /hello/images/MNP.jpg HTTP/1.1" 304 -
+127.0.0.1 - - [25/Mar/2017:17:15:34 +0530] "GET /hello/web/hello.jsp HTTP/1.1" 200 593
+127.0.0.1 - - [25/Mar/2017:17:15:34 +0530] "GET /hello/web/images/Pivotal_Logo.png HTTP/1.1" 404 1017

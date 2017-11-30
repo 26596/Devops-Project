@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.2">
+<title>Gerrit Code Review - Plugin-based Validation</title>
+<link rel="stylesheet" href="./doc.css">
+<link rel="stylesheet" href="./prettify.min.css">
+<script src="./prettify.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', prettyPrint)</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Gerrit Code Review - Plugin-based Validation</h1>
+<div class="details">
+<span id="revnumber">version v2.12.2</span>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#new-commit-validation">New commit validation</a></li>
+<li><a href="#ref-operation-validation">Ref operation validation</a></li>
+<li><a href="#pre-merge-validation">Pre-merge validation</a></li>
+<li><a href="#pre-upload-validation">Pre-upload validation</a></li>
+<li><a href="#new-project-validation">New project validation</a></li>
+<li><a href="#new-group-validation">New group validation</a></li>
+<li><a href="#hashtag-validation">Hashtag validation</a></li>
+<li><a href="#outgoing-email-validation">Outgoing e-mail validation</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gerrit provides interfaces to allow <a href="dev-plugins.html">plugins</a> to
+perform validation on certain operations.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="new-commit-validation">New commit validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>CommitValidationListener</code> interface can
+perform additional validation checks against new commits.</p>
+</div>
+<div class="paragraph">
+<p>If the commit fails the validation, the plugin can either provide a
+message that will be sent back to the git client, or throw an exception
+which will cause the commit to be rejected.</p>
+</div>
+<div class="paragraph">
+<p>Validation applies to both commits uploaded via <code>git push</code>, and new
+commits generated via Gerrit&#8217;s Web UI features such as the rebase, revert
+and cherry-pick buttons.</p>
+</div>
+<div class="paragraph">
+<p>Out of the box, Gerrit includes a plugin that checks the length of the
+subject and body lines of commit messages on uploaded commits.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="ref-operation-validation">Ref operation validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>RefOperationValidationListener</code> interface can
+perform additional validation checks against ref creation/deletion operation
+before it is applied to the git repository.</p>
+</div>
+<div class="paragraph">
+<p>If the ref operation fails the validation, the plugin can throw an exception
+which will cause the operation to fail.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="pre-merge-validation">Pre-merge validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>MergeValidationListener</code> interface can
+perform additional validation checks against commits before they
+are merged to the git repository.</p>
+</div>
+<div class="paragraph">
+<p>If the commit fails the validation, the plugin can throw an exception
+which will cause the merge to fail.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="pre-upload-validation">Pre-upload validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>UploadValidationListener</code> interface can
+perform additional validation checks before any upload operations
+(clone, fetch, pull). The validation is executed right before Gerrit
+begins to send a pack back to the git client.</p>
+</div>
+<div class="paragraph">
+<p>If upload fails the validation, the plugin can throw an exception
+which will cause the upload to fail and the exception&#8217;s message text
+will be reported to the git client.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="new-project-validation">New project validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>ProjectCreationValidationListener</code> interface
+can perform additional validation on project creation based on the
+input arguments.</p>
+</div>
+<div class="paragraph">
+<p>E.g. a plugin could use this to enforce a certain name scheme for
+project names.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="new-group-validation">New group validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>GroupCreationValidationListener</code> interface
+can perform additional validation on group creation based on the
+input arguments.</p>
+</div>
+<div class="paragraph">
+<p>E.g. a plugin could use this to enforce a certain name scheme for
+group names.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="hashtag-validation">Hashtag validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Plugins implementing the <code>HashtagValidationListener</code> interface can perform
+validation of hashtags before they are added to or removed from changes.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="outgoing-email-validation">Outgoing e-mail validation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>This interface provides a low-level e-mail filtering API for plugins.
+Plugins implementing the <code>OutgoingEmailValidationListener</code> interface can perform
+filtering of outgoing e-mails just before they are sent.</p>
+</div>
+<hr style="
+  height: 2px;
+  color: silver;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+">
+<div class="paragraph">
+<p>Part of <a href="index.html">Gerrit Code Review</a></p>
+</div>
+<div style="position:absolute; right:20px; top:20px;">
+<input type="text" id="docSearch" size="70" />
+<button type="button" id="searchBox">Search</button>
+<script type="text/javascript">
+var f = function() {
+  window.location = '../#/Documentation/' +
+    encodeURIComponent(document.getElementById("docSearch").value);
+}
+document.getElementById("searchBox").onclick = f;
+document.getElementById("docSearch").onkeypress = function(e) {
+  if (13 == (e.keyCode ? e.keyCode : e.which)) {
+    f();
+  }
+}
+</script>
+</div>
+<script type="text/javascript">
+    decorate(document.getElementsByTagName('h1'));
+    decorate(document.getElementsByTagName('h2'));
+    decorate(document.getElementsByTagName('h3'));
+    decorate(document.getElementsByTagName('h4'));
+
+    var divs = document.getElementsByTagName('div');
+    var arr = new Array();
+    var excluded = getExcludedIds();
+    for(var i = 0; i < divs.length; i++) {
+      var d = divs[i];
+      var id = d.getAttribute('id');
+      if (id != null && !(id in excluded)) {
+        arr[arr.length] = d;
+      }
+    }
+    decorate(arr);
+
+    var anchors = document.getElementsByTagName('a');
+    arr = new Array();
+    for(var i = 0; i < anchors.length; i++) {
+      var a = anchors[i];
+      // if the anchor has no id there is no target to
+      // which we can link
+      if (a.getAttribute('id') != null) {
+        // if the anchor is empty there is no content which
+        // can receive the mouseover event, an empty anchor
+        // applies to the element that follows, move the
+        // element that follows into the anchor so that there
+        // is content which can receive the mouseover event
+        if (a.firstChild == null) {
+          var next = a.nextSibling;
+          if (next != null) {
+            next.parentNode.removeChild(next);
+            a.appendChild(next);
+          }
+        }
+        arr[arr.length] = a;
+      }
+    }
+    decorate(arr);
+
+    function decorate(e) {
+      for(var i = 0; i < e.length; i++) {
+        e[i].onmouseover = function (evt) {
+          var element = this;
+          // do nothing if the link icon is currently showing
+          var a = element.firstChild;
+          if (a != null && a instanceof Element
+              && a.getAttribute('id') == 'LINK') {
+            return;
+          }
+
+          // if there is no id there is no target to link to
+          var id = element.getAttribute('id');
+          if (id == null) {
+            return;
+          }
+
+          // create and show a link icon that links to this element
+          a = document.createElement('a');
+          a.setAttribute('id', 'LINK');
+          a.setAttribute('href', '#' + id);
+          a.setAttribute('style', 'position: absolute;'
+              + ' left: ' + (element.offsetLeft - 16 - 2 * 4) + 'px;'
+              + ' padding-left: 4px; padding-right: 4px; padding-top:4px;');
+          var img = document.createElement('img');
+          img.setAttribute('src', 'images/link.png');
+          img.setAttribute('style', 'background-color: #FFFFFF;');
+          a.appendChild(img);
+          element.insertBefore(a, element.firstChild);
+
+          // remove the link icon when the mouse is moved away,
+          // but keep it shown if the mouse is over the element, the link or the icon
+          hide = function(evt) {
+            if (document.elementFromPoint(evt.clientX, evt.clientY) != element
+                && document.elementFromPoint(evt.clientX, evt.clientY) != a
+                && document.elementFromPoint(evt.clientX, evt.clientY) != img
+                && element.contains(a)) {
+              element.removeChild(a);
+            }
+          }
+          element.onmouseout = hide;
+          a.onmouseout = hide;
+          img.onmouseout = hide;
+        }
+      }
+    }
+
+    function getExcludedIds() {
+      var excluded = {};
+      excluded['header'] = true;
+      excluded['toc'] = true;
+      excluded['toctitle'] = true;
+      excluded['content'] = true;
+      excluded['preamble'] = true;
+      excluded['footer'] = true;
+      excluded['footer-text'] = true;
+      return excluded;
+    }
+</script>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version v2.12.2<br>
+</div>
+</div>
+</body>
+</html>

@@ -1,0 +1,1111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.2">
+<title>Gerrit Code Review - Building with Buck</title>
+<link rel="stylesheet" href="./doc.css">
+<link rel="stylesheet" href="./prettify.min.css">
+<script src="./prettify.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', prettyPrint)</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Gerrit Code Review - Building with Buck</h1>
+<div class="details">
+<span id="revnumber">version v2.12.2</span>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_installation">Installation</a></li>
+<li><a href="#_prerequisites">Prerequisites</a></li>
+<li><a href="#eclipse">Eclipse Integration</a>
+<ul class="sectlevel2">
+<li><a href="#_generating_the_eclipse_project">Generating the Eclipse Project</a></li>
+<li><a href="#_refreshing_the_classpath">Refreshing the Classpath</a></li>
+<li><a href="#_attaching_sources">Attaching Sources</a></li>
+</ul>
+</li>
+<li><a href="#build">Building on the Command Line</a>
+<ul class="sectlevel2">
+<li><a href="#_gerrit_development_war_file">Gerrit Development WAR File</a></li>
+<li><a href="#_headless_mode">Headless Mode</a></li>
+<li><a href="#_extension_and_plugin_api_jar_files">Extension and Plugin API JAR Files</a></li>
+<li><a href="#_plugins">Plugins</a></li>
+<li><a href="#documentation">Documentation</a></li>
+<li><a href="#soyc">GWT Compile Report</a></li>
+<li><a href="#release">Gerrit Release WAR File</a></li>
+</ul>
+</li>
+<li><a href="#tests">Running Unit Tests</a></li>
+<li><a href="#_dependencies">Dependencies</a></li>
+<li><a href="#_building_against_unpublished_maven_jars">Building against unpublished Maven JARs</a></li>
+<li><a href="#_building_against_artifacts_from_custom_maven_repositories">Building against artifacts from custom Maven repositories</a>
+<ul class="sectlevel2">
+<li><a href="#_caching_build_results">Caching Build Results</a></li>
+<li><a href="#clean-cache">Cleaning The Buck Cache</a></li>
+<li><a href="#buck-daemon">Using Buck daemon</a></li>
+<li><a href="#watchman">Installing watchman</a></li>
+<li><a href="#_override_buck_s_settings">Override Buck&#8217;s settings</a></li>
+</ul>
+</li>
+<li><a href="#_rerun_unit_tests">Rerun unit tests</a></li>
+<li><a href="#_upgrading_buck">Upgrading Buck</a></li>
+<li><a href="#_known_issues_and_bugs">Known issues and bugs</a>
+<ul class="sectlevel2">
+<li><a href="#_symbolic_links_and_code_watchman_code">Symbolic links and <code>watchman</code></a></li>
+<li><a href="#_re_triggering_rule_execution">Re-triggering rule execution</a></li>
+</ul>
+</li>
+<li><a href="#_troubleshooting_buck">Troubleshooting Buck</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div class="sect1">
+<h2 id="_installation">Installation</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Note that you need to use Java 7 for building gerrit.</p>
+</div>
+<div class="paragraph">
+<p>There is currently no binary distribution of Buck, so it has to be manually
+built and installed.  Apache Ant is required.  Currently only Linux and Mac
+OS are supported.</p>
+</div>
+<div class="paragraph">
+<p>Clone the git and build it:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  git clone https://github.com/facebook/buck
+  cd buck
+  git checkout $(cat ../gerrit/.buckversion)
+  ant</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>If you don&#8217;t have a <code>bin/</code> directory in your home directory, create one:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  mkdir ~/bin</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Add the <code>~/bin</code> folder to the path:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  PATH=~/bin:$PATH</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the buck executable needs to be available in all shell sessions,
+so also make sure it is appended to the path globally.</p>
+</div>
+<div class="paragraph">
+<p>Add a symbolic link in <code>~/bin</code> to the buck and buckd executables:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  ln -s `pwd`/bin/buck ~/bin/
+  ln -s `pwd`/bin/buckd ~/bin/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Verify that <code>buck</code> is accessible:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  which buck</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To enable autocompletion of buck commands, install the autocompletion
+script from <code>./scripts/buck_completion.bash</code> in the buck project.  Refer
+to the script&#8217;s header comments for installation instructions.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_prerequisites">Prerequisites</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Buck requires Python version 2.7 to be installed. The Maven download toolchain
+requires <code>curl</code> to be installed.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="eclipse">Eclipse Integration</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_generating_the_eclipse_project">Generating the Eclipse Project</h3>
+<div class="paragraph">
+<p>Create the Eclipse project:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  tools/eclipse/project.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>and then follow the <a href="dev-eclipse.html#setup">setup instructions</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_refreshing_the_classpath">Refreshing the Classpath</h3>
+<div class="paragraph">
+<p>If an updated classpath is needed, the Eclipse project can be
+refreshed and missing dependency JARs can be downloaded:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  tools/eclipse/project.py</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_attaching_sources">Attaching Sources</h3>
+<div class="paragraph">
+<p>To save time and bandwidth source JARs are only downloaded by the buck
+build where necessary to compile Java source into JavaScript using the
+GWT compiler.  Additional sources may be obtained, allowing Eclipse to
+show documentation or dive into the implementation of a library JAR:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  tools/eclipse/project.py --src</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="build">Building on the Command Line</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_gerrit_development_war_file">Gerrit Development WAR File</h3>
+<div class="paragraph">
+<p>To build the Gerrit web application:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build gerrit</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output executable WAR will be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/gerrit/gerrit.war</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_headless_mode">Headless Mode</h3>
+<div class="paragraph">
+<p>To build Gerrit in headless mode, i.e. without the GWT Web UI:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build headless</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output executable WAR will be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/headless/headless.war</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_extension_and_plugin_api_jar_files">Extension and Plugin API JAR Files</h3>
+<div class="paragraph">
+<p>To build the extension, plugin and GWT API JAR files:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build api</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Java binaries, Java sources and Java docs are generated into corresponding
+project directories in <code>buck-out/gen</code>, here as example for plugin API:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/gerrit-plugin-api/plugin-api.jar
+  buck-out/gen/gerrit-plugin-api/plugin-api-javadoc/plugin-api-javadoc.jar
+  buck-out/gen/gerrit-plugin-api/plugin-api-src.jar</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Install {extension,plugin,gwt}-api to the local maven repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build api_install</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Install gerrit.war to the local maven repository:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build war_install</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_plugins">Plugins</h3>
+<div class="paragraph">
+<p>To build all core plugins:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build plugins:core</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output JAR files for individual plugins will be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/plugins/&lt;name&gt;/&lt;name&gt;.jar</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The JAR files will also be packaged in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/plugins/core/core.zip</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To build a specific plugin:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build plugins/&lt;name&gt;:&lt;name&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output JAR file will be be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/plugins/&lt;name&gt;/&lt;name&gt;.jar</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that when building an individual plugin, the <code>core.zip</code> package
+is not regenerated.</p>
+</div>
+<div class="paragraph">
+<p>Additional plugins with BUCK files can be added to the build
+environment by cloning the source repository into the plugins
+subdirectory:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  git clone https://gerrit.googlesource.com/plugins/&lt;name&gt; plugins/&lt;name&gt;
+  echo /plugins/&lt;name&gt; &gt;&gt;.git/info/exclude</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Additional plugin sources will be automatically added to Eclipse the
+next time project.py is run:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  tools/eclipse/project.py</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="documentation">Documentation</h3>
+<div class="paragraph">
+<p>To build only the documentation for testing or static hosting:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build docs</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The generated html files will NOT come with the search box, and will be
+placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/Documentation/searchfree__tmp/Documentation</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The html files will also be bundled into <code>searchfree.zip</code> in this location:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/Documentation/searchfree/searchfree.zip</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To build the executable WAR with the documentation included:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build withdocs</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The WAR file will be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/withdocs/withdocs.war</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="soyc">GWT Compile Report</h3>
+<div class="paragraph">
+<p>The GWT compiler can output a compile report (or "story of your compile"),
+describing the size of the JavaScript and which source classes contributed
+to the overall download size.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build soyc</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The report will be written as an HTML page to the extras directory, and
+can be opened and viewed in any web browser:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  extras/gerrit_ui/soycReport/compile-report/index.html</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Only the "Split Point Report" is created, "Compiler Metrics" are not output.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="release">Gerrit Release WAR File</h3>
+<div class="paragraph">
+<p>To build the release of the Gerrit web application, including documentation and
+all core plugins:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck build release</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The output release WAR will be placed in:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck-out/gen/release/release.war</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="tests">Running Unit Tests</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To run all tests including acceptance tests (but not flaky tests):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test --exclude flaky</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To exclude flaky and slow tests:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test --exclude flaky slow</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To run only a specific group of acceptance tests:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test --include api</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The following groups of tests are currently supported:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>acceptance</p>
+</li>
+<li>
+<p>api</p>
+</li>
+<li>
+<p>edit</p>
+</li>
+<li>
+<p>flaky</p>
+</li>
+<li>
+<p>git</p>
+</li>
+<li>
+<p>pgm</p>
+</li>
+<li>
+<p>rest</p>
+</li>
+<li>
+<p>server</p>
+</li>
+<li>
+<p>ssh</p>
+</li>
+<li>
+<p>slow</p>
+</li>
+</ul>
+</div>
+<div class="paragraph">
+<p>To run a specific test group, e.g. the rest-account test group:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test //gerrit-acceptance-tests/src/test/java/com/google/gerrit/acceptance/rest/account:rest-account</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To create test coverage report:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test --code-coverage --code-coverage-format html --no-results-cache</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The HTML report is created in <code>buck-out/gen/jacoco/code-coverage/index.html</code>.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_dependencies">Dependencies</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Dependency JARs are normally downloaded automatically, but Buck can inspect
+its graph and download any missing JAR files.  This is useful to enable
+subsequent builds to run without network access:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  tools/download_all.py</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When downloading from behind a proxy (which is common in some corporate
+environments), it might be necessary to explicitly specify the proxy that
+is then used by <code>curl</code>:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  export http_proxy=http://&lt;proxy_user_id&gt;:&lt;proxy_password&gt;@&lt;proxy_server&gt;:&lt;proxy_port&gt;</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Redirection to local mirrors of Maven Central and the Gerrit storage
+bucket is supported by defining specific properties in
+<code>local.properties</code>, a file that is not tracked by Git:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  echo download.GERRIT = http://nexus.my-company.com/ &gt;&gt;local.properties
+  echo download.MAVEN_CENTRAL = http://nexus.my-company.com/ &gt;&gt;local.properties</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>The <code>local.properties</code> file may be placed in the root of the gerrit repository
+being built, or in <code>~/.gerritcodereview/</code>.  The file in the root of the gerrit
+repository has precedence.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_against_unpublished_maven_jars">Building against unpublished Maven JARs</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To build against unpublished Maven JARs, like gwtorm or PrologCafe, the custom
+JARs must be installed in the local Maven repository (<code>mvn clean install</code>) and
+<code>maven_jar()</code> must be updated to point to the <code>MAVEN_LOCAL</code> Maven repository for
+that artifact:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-python" data-lang="python"> maven_jar(
+   name = 'gwtorm',
+   id = 'gwtorm:gwtorm:42',
+   license = 'Apache2.0',
+   repository = MAVEN_LOCAL,
+ )</code></pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_building_against_artifacts_from_custom_maven_repositories">Building against artifacts from custom Maven repositories</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>To build against custom Maven repositories, two modes of operations are
+supported: with rewrite in local.properties and without.</p>
+</div>
+<div class="paragraph">
+<p>Without rewrite the URL of custom Maven repository can be directly passed
+to the maven_jar() function:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-python" data-lang="python">  GERRIT_FORGE = 'http://gerritforge.com/snapshot'
+
+  maven_jar(
+    name = 'gitblit',
+    id = 'com.gitblit:gitblit:1.4.0',
+    sha1 = '1b130dbf5578ace37507430a4a523f6594bf34fa',
+    license = 'Apache2.0',
+    repository = GERRIT_FORGE,
+ )</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When the custom URL has to be rewritten, then the same logic as with Gerrit
+known Maven repository is used: Repo name must be defined that matches an entry
+in local.properties file:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  download.GERRIT_FORGE = http://my.company.mirror/gerrit-forge</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>And corresponding BUCK excerpt:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="prettyprint highlight"><code class="language-python" data-lang="python">  GERRIT_FORGE = 'GERRIT_FORGE:'
+
+  maven_jar(
+    name = 'gitblit',
+    id = 'com.gitblit:gitblit:1.4.0',
+    sha1 = '1b130dbf5578ace37507430a4a523f6594bf34fa',
+    license = 'Apache2.0',
+    repository = GERRIT_FORGE,
+ )</code></pre>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_caching_build_results">Caching Build Results</h3>
+<div class="paragraph">
+<p>Build results can be locally cached, saving rebuild time when
+switching between Git branches. Buck&#8217;s documentation covers
+caching in <a href="http://facebook.github.io/buck/concept/buckconfig.html">buckconfig</a>.
+The trivial case using a local directory is:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  cat &gt;.buckconfig.local &lt;&lt;EOF
+  [cache]
+    mode = dir
+    dir = buck-cache
+  EOF</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="clean-cache">Cleaning The Buck Cache</h3>
+<div class="paragraph">
+<p>The cache for the Gerrit Code Review project is located in
+<code>~/.gerritcodereview/buck-cache/locally-built-artifacts</code>.</p>
+</div>
+<div class="paragraph">
+<p>The Buck cache should never need to be manually deleted. If you find yourself
+deleting the Buck cache regularly, then it is likely that there is something
+wrong with your environment or your workflow.</p>
+</div>
+<div class="paragraph">
+<p>If you really do need to clean the cache manually, then:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre> rm -rf ~/.gerritcodereview/buck-cache/locally-built-artifacts</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Note that the root <code>buck-cache</code> folder should not be deleted as it also contains
+the <code>downloaded-artifacts</code> directory, which holds the artifacts that got
+downloaded (not built locally).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="buck-daemon">Using Buck daemon</h3>
+<div class="paragraph">
+<p>Buck ships with a daemon command <code>buckd</code>, which uses the
+<a href="https://github.com/martylamb/nailgun">Nailgun</a> protocol for running
+Java programs from the command line without incurring the JVM startup
+overhead.</p>
+</div>
+<div class="paragraph">
+<p>Using a Buck daemon can save significant amounts of time as it avoids the
+overhead of starting a Java virtual machine, loading the buck class files
+and parsing the build files for each command.</p>
+</div>
+<div class="paragraph">
+<p>It is safe to run several buck daemons started from different project
+directories and they will not interfere with each other. Buck&#8217;s documentation
+covers daemon in <a href="http://facebook.github.io/buck/command/buckd.html">buckd</a>.</p>
+</div>
+<div class="paragraph">
+<p>To use <code>buckd</code> the additional
+<a href="https://facebook.github.io/watchman">watchman</a> program must be installed.</p>
+</div>
+<div class="paragraph">
+<p>To disable <code>buckd</code>, the environment variable <code>NO_BUCKD</code> must be set. It&#8217;s not
+recommended to put it in the shell config, as it can be forgotten about it and
+then assumed Buck was working as it should when it should be using buckd.
+Prepend the variable to Buck invocation instead:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  NO_BUCKD=1 buck build gerrit</pre>
+</div>
+</div>
+</div>
+<div class="sect2">
+<h3 id="watchman">Installing watchman</h3>
+<div class="paragraph">
+<p>Watchman is used internally by Buck to monitor directory trees and is needed
+for buck daemon to work properly. Because buckd is activated by default in the
+latest version of Buck, it searches for the watchman executable in the
+path and issues a warning when it is not found and kills buckd.</p>
+</div>
+<div class="paragraph">
+<p>To prepare watchman installation on Linux:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  git clone https://github.com/facebook/watchman.git
+  cd watchman
+  ./autogen.sh</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To install it in user home directory (without root privileges):</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  ./configure --prefix $HOME/watchman
+  make install</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>To install it system wide:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  ./configure
+  make
+  sudo make install</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Put $HOME/watchman/bin/watchman in path or link to $HOME/bin/watchman.</p>
+</div>
+<div class="paragraph">
+<p>To install watchman on OS X:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  brew install --HEAD watchman</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>See the original documentation for more information:
+<a href="https://facebook.github.io/watchman/docs/install.html">Watchman
+installation</a>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_override_buck_s_settings">Override Buck&#8217;s settings</h3>
+<div class="paragraph">
+<p>Additional JVM args for Buck can be set in <code>.buckjavaargs</code> in the
+project root directory. For example to override Buck&#8217;s default 1GB
+heap size:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  cat &gt; .buckjavaargs &lt;&lt;EOF
+  -XX:MaxPermSize=512m -Xms8000m -Xmx16000m
+  EOF</pre>
+</div>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_rerun_unit_tests">Rerun unit tests</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Test execution results are cached by Buck. If a test that was already run
+needs to be repeated, the unit test cache for that test must be removed first:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  rm -rf buck-out/bin/gerrit-acceptance-tests/src/test/java/com/google/gerrit/acceptance/rest/account/.rest-account/</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>After clearing the cache, the test can be run again:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test //gerrit-acceptance-tests/src/test/java/com/google/gerrit/acceptance/rest/account:rest-account
+  [-] TESTING...FINISHED 12,3s (12 PASS/0 FAIL)
+  RESULTS FOR //gerrit-acceptance-tests/src/test/java/com/google/gerrit/acceptance/rest/account:rest-account
+  PASS     970ms  2 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.CapabilitiesIT
+  PASS     999ms  1 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.EditPreferencesIT
+  PASS      1,2s  1 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.GetAccountDetailIT
+  PASS     951ms  2 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.GetAccountIT
+  PASS      6,4s  2 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.GetDiffPreferencesIT
+  PASS      1,2s  4 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.PutUsernameIT
+  TESTS PASSED</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>An alternative approach is to use Buck&#8217;s <code>--filters</code> (<code>-f</code>) option:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>  buck test -f 'com.google.gerrit.acceptance.rest.account.CapabilitiesIT'
+  Using buckd.
+  [-] PROCESSING BUCK FILES...FINISHED 1,0s [100%]
+  [-] BUILDING...FINISHED 2,8s [100%] (334/701 JOBS, 110 UPDATED, 5,1% CACHE MISS)
+  [-] TESTING...FINISHED 9,2s (6 PASS/0 FAIL)
+  RESULTS FOR SELECTED TESTS
+  PASS      8,0s  2 Passed   0 Skipped   0 Failed   com.google.gerrit.acceptance.rest.account.CapabilitiesIT
+  PASS    &lt;100ms  4 Passed   0 Skipped   0 Failed   //tools:util_test
+  TESTS PASSED</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>When this option is used, the cache is disabled per design and doesn&#8217;t need to
+be explicitly deleted. Note, that this is a known issue, that python tests are
+always executed.</p>
+</div>
+<div class="paragraph">
+<p>Note that when this option is used, the whole unit test cache is dropped, so
+repeating the</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>buck test</pre>
+</div>
+</div>
+<div class="paragraph">
+<p>causes all tests to be executed again.</p>
+</div>
+<div class="paragraph">
+<p>To run tests without using cached results at all, use the <code>--no-results-cache</code>
+option:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre>buck test --no-results-cache</pre>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_upgrading_buck">Upgrading Buck</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The following tests should be executed, when Buck version is upgraded:</p>
+</div>
+<div class="ulist">
+<ul>
+<li>
+<p>buck build release</p>
+</li>
+<li>
+<p>buck build api_install</p>
+</li>
+<li>
+<p>buck test</p>
+</li>
+<li>
+<p>buck build gerrit, change some sources in gerrit-server project,
+repeat buck build gerrit and verify that gerrit.war was updated</p>
+</li>
+<li>
+<p>install and verify new gerrit site</p>
+</li>
+<li>
+<p>upgrade and verify existing gerrit site</p>
+</li>
+<li>
+<p>reindex existing gerrit site</p>
+</li>
+<li>
+<p>verify that tools/eclipse/project.py produces sane Eclipse project</p>
+</li>
+<li>
+<p>verify that tools/eclipse/project.py --src generates sources as well</p>
+</li>
+<li>
+<p>verify that unit test execution from Eclipse works</p>
+</li>
+<li>
+<p>verify that daemon started from Eclipse works</p>
+</li>
+<li>
+<p>verify that GWT SDM debug session started from Eclipse works</p>
+</li>
+</ul>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_known_issues_and_bugs">Known issues and bugs</h2>
+<div class="sectionbody">
+<div class="sect2">
+<h3 id="_symbolic_links_and_code_watchman_code">Symbolic links and <code>watchman</code></h3>
+<div class="paragraph">
+<p><code>Buck</code> with activated <code>Watchman</code> has currently a
+[known bug](<a href="https://github.com/facebook/buck/issues/341" class="bare">https://github.com/facebook/buck/issues/341</a>) related to
+symbolic links. The symbolic links are used very often with external
+plugins, that are linked per symbolic link to the plugins directory.
+With this use case Buck is failing to rebuild the plugin artefact
+after it was built. All attempts to convince Buck to rebuild will fail.
+The only known way to recover is to weep out <code>buck-out</code> directory. The
+better workaround is to avoid using Watchman in this specific use case.
+Watchman can either be de-installed or disabled. See
+<a href="#buck-daemon">Using Buck daemon</a> section above how to temporarily
+disable <code>buckd</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_re_triggering_rule_execution">Re-triggering rule execution</h3>
+<div class="paragraph">
+<p>There is no way to re-trigger custom rules with side effects, like
+<code>api_{deploy|install}</code>. This is a <code>genrule()</code> that depends on Java sources
+and is deploying the Plugin API through custom Python script to the local or
+remote Maven repositories. When for some reasons the deployment was undone,
+there is no supported way to re-trigger the execution of <code>api_{deploy|install}</code>
+targets. That&#8217;s because <code>--no-cache</code> option will ignore the <code>Buck</code> cache, but
+there is no way to ignore <code>buck-out</code> directory. To overcome this Buck&#8217;s design
+limitation new <code>tools/maven/api.py</code> script was added, that always re-triggers
+installation or deployment of Plugin API to local or Central Maven repository.</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="prettyprint highlight"><code>  tools/maven/api.py {deploy|install}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>Dry run mode is also supported:</p>
+</div>
+<div class="listingblock">
+<div class="content">
+<pre class="prettyprint highlight"><code>  tools/maven/api.py -n {deploy|install}</code></pre>
+</div>
+</div>
+<div class="paragraph">
+<p>With this script the deployment would re-trigger on every invocation.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_troubleshooting_buck">Troubleshooting Buck</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>In some cases problems with Buck itself need to be investigated. See for example
+<a href="https://gerrit-review.googlesource.com/62411">this attempt to upgrade Buck</a>
+and <a href="https://github.com/facebook/buck/pull/227">the fix that was needed</a> to
+make the update possible.</p>
+</div>
+<div class="paragraph">
+<p>To build Gerrit with a custom version of Buck, the following steps are necessary:</p>
+</div>
+<div class="olist arabic">
+<ol class="arabic">
+<li>
+<p>In the Buck git apply any necessary changes from pull requests</p>
+</li>
+<li>
+<p>Compile Buck with <code>ant</code></p>
+</li>
+<li>
+<p>In the root of the Gerrit project create a <code>.nobuckcheck</code> file to prevent Buck
+from updating itself</p>
+</li>
+<li>
+<p>Replace the sha1 in Gerrit&#8217;s <code>.buckversion</code> file with the required version from
+the custom Buck build</p>
+</li>
+<li>
+<p>Build Gerrit as usual</p>
+</li>
+</ol>
+</div>
+<hr style="
+  height: 2px;
+  color: silver;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+">
+<div class="paragraph">
+<p>Part of <a href="index.html">Gerrit Code Review</a></p>
+</div>
+<div style="position:absolute; right:20px; top:20px;">
+<input type="text" id="docSearch" size="70" />
+<button type="button" id="searchBox">Search</button>
+<script type="text/javascript">
+var f = function() {
+  window.location = '../#/Documentation/' +
+    encodeURIComponent(document.getElementById("docSearch").value);
+}
+document.getElementById("searchBox").onclick = f;
+document.getElementById("docSearch").onkeypress = function(e) {
+  if (13 == (e.keyCode ? e.keyCode : e.which)) {
+    f();
+  }
+}
+</script>
+</div>
+<script type="text/javascript">
+    decorate(document.getElementsByTagName('h1'));
+    decorate(document.getElementsByTagName('h2'));
+    decorate(document.getElementsByTagName('h3'));
+    decorate(document.getElementsByTagName('h4'));
+
+    var divs = document.getElementsByTagName('div');
+    var arr = new Array();
+    var excluded = getExcludedIds();
+    for(var i = 0; i < divs.length; i++) {
+      var d = divs[i];
+      var id = d.getAttribute('id');
+      if (id != null && !(id in excluded)) {
+        arr[arr.length] = d;
+      }
+    }
+    decorate(arr);
+
+    var anchors = document.getElementsByTagName('a');
+    arr = new Array();
+    for(var i = 0; i < anchors.length; i++) {
+      var a = anchors[i];
+      // if the anchor has no id there is no target to
+      // which we can link
+      if (a.getAttribute('id') != null) {
+        // if the anchor is empty there is no content which
+        // can receive the mouseover event, an empty anchor
+        // applies to the element that follows, move the
+        // element that follows into the anchor so that there
+        // is content which can receive the mouseover event
+        if (a.firstChild == null) {
+          var next = a.nextSibling;
+          if (next != null) {
+            next.parentNode.removeChild(next);
+            a.appendChild(next);
+          }
+        }
+        arr[arr.length] = a;
+      }
+    }
+    decorate(arr);
+
+    function decorate(e) {
+      for(var i = 0; i < e.length; i++) {
+        e[i].onmouseover = function (evt) {
+          var element = this;
+          // do nothing if the link icon is currently showing
+          var a = element.firstChild;
+          if (a != null && a instanceof Element
+              && a.getAttribute('id') == 'LINK') {
+            return;
+          }
+
+          // if there is no id there is no target to link to
+          var id = element.getAttribute('id');
+          if (id == null) {
+            return;
+          }
+
+          // create and show a link icon that links to this element
+          a = document.createElement('a');
+          a.setAttribute('id', 'LINK');
+          a.setAttribute('href', '#' + id);
+          a.setAttribute('style', 'position: absolute;'
+              + ' left: ' + (element.offsetLeft - 16 - 2 * 4) + 'px;'
+              + ' padding-left: 4px; padding-right: 4px; padding-top:4px;');
+          var img = document.createElement('img');
+          img.setAttribute('src', 'images/link.png');
+          img.setAttribute('style', 'background-color: #FFFFFF;');
+          a.appendChild(img);
+          element.insertBefore(a, element.firstChild);
+
+          // remove the link icon when the mouse is moved away,
+          // but keep it shown if the mouse is over the element, the link or the icon
+          hide = function(evt) {
+            if (document.elementFromPoint(evt.clientX, evt.clientY) != element
+                && document.elementFromPoint(evt.clientX, evt.clientY) != a
+                && document.elementFromPoint(evt.clientX, evt.clientY) != img
+                && element.contains(a)) {
+              element.removeChild(a);
+            }
+          }
+          element.onmouseout = hide;
+          a.onmouseout = hide;
+          img.onmouseout = hide;
+        }
+      }
+    }
+
+    function getExcludedIds() {
+      var excluded = {};
+      excluded['header'] = true;
+      excluded['toc'] = true;
+      excluded['toctitle'] = true;
+      excluded['content'] = true;
+      excluded['preamble'] = true;
+      excluded['footer'] = true;
+      excluded['footer-text'] = true;
+      return excluded;
+    }
+</script>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version v2.12.2<br>
+</div>
+</div>
+</body>
+</html>

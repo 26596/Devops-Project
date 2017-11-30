@@ -1,0 +1,33 @@
+/*
+
+Copyright (C) 2015 by Marijn Haverbeke <marijnh@gmail.com> and others
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+*/
+(function(f){"object"==typeof exports&&"object"==typeof module?f(require("../../lib/codemirror")):"function"==typeof define&&define.amd?define(["../../lib/codemirror"],f):f(CodeMirror)})(function(f){f.defineMode("xml",function(A,k){function h(a,c){function b(b){c.tokenize=b;return b(a,c)}var d=a.next();if("<"==d){if(a.eat("!"))return a.eat("[")?a.match("CDATA[")?b(p("atom","]]\x3e")):null:a.match("--")?b(p("comment","--\x3e")):a.match("DOCTYPE",!0,!0)?(a.eatWhile(/[\w\._\-]/),b(q(1))):null;if(a.eat("?"))return a.eatWhile(/[\w\._\-]/),
+c.tokenize=p("meta","?>"),"meta";l=a.eat("/")?"closeTag":"openTag";c.tokenize=r;return"tag bracket"}if("&"==d)return(a.eat("#")?a.eat("x")?a.eatWhile(/[a-fA-F\d]/)&&a.eat(";"):a.eatWhile(/[\d]/)&&a.eat(";"):a.eatWhile(/[\w\.\-:]/)&&a.eat(";"))?"atom":"error";a.eatWhile(/[^&<]/);return null}function r(a,c){var b=a.next();if(">"==b||"/"==b&&a.eat(">"))return c.tokenize=h,l=">"==b?"endTag":"selfcloseTag","tag bracket";if("="==b)return l="equals",null;if("<"==b)return c.tokenize=h,c.state=n,c.tagName=
+c.tagStart=null,(b=c.tokenize(a,c))?b+" tag error":"tag error";if(/[\'\"]/.test(b))return c.tokenize=B(b),c.stringStartCol=a.column(),c.tokenize(a,c);a.match(/^[^\s\u00a0=<>\"\']*[^\s\u00a0=<>\"\'\/]/);return"word"}function B(a){var c=function(b,c){for(;!b.eol();)if(b.next()==a){c.tokenize=r;break}return"string"};c.isInAttribute=!0;return c}function p(a,c){return function(b,d){for(;!b.eol();){if(b.match(c)){d.tokenize=h;break}b.next()}return a}}function q(a){return function(c,b){for(var d;null!=(d=
+c.next());){if("<"==d)return b.tokenize=q(a+1),b.tokenize(c,b);if(">"==d)if(1==a){b.tokenize=h;break}else return b.tokenize=q(a-1),b.tokenize(c,b)}return"meta"}}function C(a,c,b){this.prev=a.context;this.tagName=c;this.indent=a.indented;this.startOfLine=b;if(g.doNotIndent.hasOwnProperty(c)||a.context&&a.context.noIndent)this.noIndent=!0}function s(a){a.context&&(a.context=a.context.prev)}function w(a,c){for(var b;a.context;){b=a.context.tagName;if(!g.contextGrabbers.hasOwnProperty(b)||!g.contextGrabbers[b].hasOwnProperty(c))break;
+s(a)}}function n(a,c,b){return"openTag"==a?(b.tagStart=c.column(),x):"closeTag"==a?D:n}function x(a,c,b){if("word"==a)return b.tagName=c.current(),e="tag",m;e="error";return x}function D(a,c,b){if("word"==a){a=c.current();b.context&&b.context.tagName!=a&&g.implicitlyClosed.hasOwnProperty(b.context.tagName)&&s(b);if(b.context&&b.context.tagName==a)return e="tag",t;e="tag error";return y}e="error";return y}function t(a,c,b){if("endTag"!=a)return e="error",t;s(b);return n}function y(a,c,b){e="error";
+return t(a,c,b)}function m(a,c,b){if("word"==a)return e="attribute",E;if("endTag"==a||"selfcloseTag"==a){c=b.tagName;var d=b.tagStart;b.tagName=b.tagStart=null;"selfcloseTag"==a||g.autoSelfClosers.hasOwnProperty(c)?w(b,c):(w(b,c),b.context=new C(b,c,d==b.indented));return n}e="error";return m}function E(a,c,b){if("equals"==a)return F;g.allowMissing||(e="error");return m(a,c,b)}function F(a,c,b){if("string"==a)return z;if("word"==a&&g.allowUnquoted)return e="string",m;e="error";return m(a,c,b)}function z(a,
+c,b){return"string"==a?z:m(a,c,b)}var u=A.indentUnit,G=k.multilineTagIndentFactor||1,v=k.multilineTagIndentPastTag;null==v&&(v=!0);var g=k.htmlMode?{autoSelfClosers:{area:!0,base:!0,br:!0,col:!0,command:!0,embed:!0,frame:!0,hr:!0,img:!0,input:!0,keygen:!0,link:!0,meta:!0,param:!0,source:!0,track:!0,wbr:!0,menuitem:!0},implicitlyClosed:{dd:!0,li:!0,optgroup:!0,option:!0,p:!0,rp:!0,rt:!0,tbody:!0,td:!0,tfoot:!0,th:!0,tr:!0},contextGrabbers:{dd:{dd:!0,dt:!0},dt:{dd:!0,dt:!0},li:{li:!0},option:{option:!0,
+optgroup:!0},optgroup:{optgroup:!0},p:{address:!0,article:!0,aside:!0,blockquote:!0,dir:!0,div:!0,dl:!0,fieldset:!0,footer:!0,form:!0,h1:!0,h2:!0,h3:!0,h4:!0,h5:!0,h6:!0,header:!0,hgroup:!0,hr:!0,menu:!0,nav:!0,ol:!0,p:!0,pre:!0,section:!0,table:!0,ul:!0},rp:{rp:!0,rt:!0},rt:{rp:!0,rt:!0},tbody:{tbody:!0,tfoot:!0},td:{td:!0,th:!0},tfoot:{tbody:!0},th:{td:!0,th:!0},thead:{tbody:!0,tfoot:!0},tr:{tr:!0}},doNotIndent:{pre:!0},allowUnquoted:!0,allowMissing:!0,caseFold:!0}:{autoSelfClosers:{},implicitlyClosed:{},
+contextGrabbers:{},doNotIndent:{},allowUnquoted:!1,allowMissing:!1,caseFold:!1},H=k.alignCDATA,l,e;h.isInText=!0;return{startState:function(){return{tokenize:h,state:n,indented:0,tagName:null,tagStart:null,context:null}},token:function(a,c){!c.tagName&&a.sol()&&(c.indented=a.indentation());if(a.eatSpace())return null;l=null;var b=c.tokenize(a,c);(b||l)&&"comment"!=b&&(e=null,c.state=c.state(l||b,a,c),e&&(b="error"==e?b+" error":e));return b},indent:function(a,c,b){var d=a.context;if(a.tokenize.isInAttribute)return a.tagStart==
+a.indented?a.stringStartCol+1:a.indented+u;if(d&&d.noIndent)return f.Pass;if(a.tokenize!=r&&a.tokenize!=h)return b?b.match(/^(\s*)/)[0].length:0;if(a.tagName)return v?a.tagStart+a.tagName.length+2:a.tagStart+u*G;if(H&&/<!\[CDATA\[/.test(c))return 0;if((a=c&&/^<(\/)?([\w_:\.-]*)/.exec(c))&&a[1])for(;d;)if(d.tagName==a[2]){d=d.prev;break}else if(g.implicitlyClosed.hasOwnProperty(d.tagName))d=d.prev;else break;else if(a)for(;d;)if((c=g.contextGrabbers[d.tagName])&&c.hasOwnProperty(a[2]))d=d.prev;else break;
+for(;d&&!d.startOfLine;)d=d.prev;return d?d.indent+u:0},electricInput:/<\/[\s\w:]+>$/,blockCommentStart:"\x3c!--",blockCommentEnd:"--\x3e",configuration:k.htmlMode?"html":"xml",helperType:k.htmlMode?"html":"xml"}});f.defineMIME("text/xml","xml");f.defineMIME("application/xml","xml");f.mimeModes.hasOwnProperty("text/html")||f.defineMIME("text/html",{name:"xml",htmlMode:!0})});

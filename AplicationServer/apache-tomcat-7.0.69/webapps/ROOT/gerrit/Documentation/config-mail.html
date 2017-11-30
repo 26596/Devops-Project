@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<!--[if IE]><meta http-equiv="X-UA-Compatible" content="IE=edge"><![endif]-->
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="generator" content="Asciidoctor 1.5.2">
+<title>Gerrit Code Review - Mail Templates</title>
+<link rel="stylesheet" href="./doc.css">
+<link rel="stylesheet" href="./prettify.min.css">
+<script src="./prettify.min.js"></script>
+<script>document.addEventListener('DOMContentLoaded', prettyPrint)</script>
+</head>
+<body class="article">
+<div id="header">
+<h1>Gerrit Code Review - Mail Templates</h1>
+<div class="details">
+<span id="revnumber">version v2.12.2</span>
+</div>
+<div id="toc" class="toc">
+<div id="toctitle">Table of Contents</div>
+<ul class="sectlevel1">
+<li><a href="#_template_locations_and_extensions">Template Locations and Extensions:</a></li>
+<li><a href="#_supported_mail_templates">Supported Mail Templates:</a>
+<ul class="sectlevel2">
+<li><a href="#_abandoned_vm">Abandoned.vm</a></li>
+<li><a href="#_addkey_vm">AddKey.vm</a></li>
+<li><a href="#_changefooter_vm">ChangeFooter.vm</a></li>
+<li><a href="#_changesubject_vm">ChangeSubject.vm</a></li>
+<li><a href="#_comment_vm">Comment.vm</a></li>
+<li><a href="#_commentfooter_vm">CommentFooter.vm</a></li>
+<li><a href="#_footer_vm">Footer.vm</a></li>
+<li><a href="#_merged_vm">Merged.vm</a></li>
+<li><a href="#_mergefail_vm">MergeFail.vm</a></li>
+<li><a href="#_newchange_vm">NewChange.vm</a></li>
+<li><a href="#_registernewemail_vm">RegisterNewEmail.vm</a></li>
+<li><a href="#_replacepatchset_vm">ReplacePatchSet.vm</a></li>
+<li><a href="#_restored_vm">Restored.vm</a></li>
+<li><a href="#_reverted_vm">Reverted.vm</a></li>
+</ul>
+</li>
+<li><a href="#_mail_variables_and_methods">Mail Variables and Methods</a>
+<ul class="sectlevel2">
+<li><a href="#_warning">Warning</a></li>
+<li><a href="#_all_outgoingemails">All OutgoingEmails</a></li>
+<li><a href="#_change_emails">Change Emails</a></li>
+</ul>
+</li>
+<li><a href="#_see_also">SEE ALSO</a></li>
+</ul>
+</div>
+</div>
+<div id="content">
+<div id="preamble">
+<div class="sectionbody">
+<div class="paragraph">
+<p>Gerrit uses velocity templates for the bulk of the standard mails it sends out.
+There are builtin default templates which are used if they are not overridden.
+These defaults are also provided as examples so that administrators may copy
+them and easily modify them to tweak their contents.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_template_locations_and_extensions">Template Locations and Extensions:</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>The default example templates reside under:  <code>'$site_path'/etc/mail</code> and are
+terminated with the double extension <code>.vm.example</code>. Modifying these example
+files will have no effect on the behavior of Gerrit.  However, copying an
+example template to an equivalently named file without the <code>.example</code> extension
+and modifying it will allow an administrator to customize the template.</p>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_supported_mail_templates">Supported Mail Templates:</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Each mail that Gerrit sends out is controlled by at least one template.  These
+are listed below.  Change emails are influenced by two additional templates,
+one to set the subject line, and one to set the footer which gets appended to
+all the change emails (see <code>ChangeSubject.vm</code> and <code>ChangeFooter.vm</code> below.)</p>
+</div>
+<div class="sect2">
+<h3 id="_abandoned_vm">Abandoned.vm</h3>
+<div class="paragraph">
+<p>The <code>Abandoned.vm</code> template will determine the contents of the email related
+to a change being abandoned.  It is a <code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and
+<code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_addkey_vm">AddKey.vm</h3>
+<div class="paragraph">
+<p>The <code>AddKey.vm</code> template will determine the contents of the email related to
+SSH and GPG keys being added to a user account. This notification is not sent
+when the key is administratively added to another user account.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_changefooter_vm">ChangeFooter.vm</h3>
+<div class="paragraph">
+<p>The <code>ChangeFooter.vm</code> template will determine the contents of the footer
+text that will be appended to emails related to changes (all `ChangeEmail`s).</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_changesubject_vm">ChangeSubject.vm</h3>
+<div class="paragraph">
+<p>The <code>ChangeSubject.vm</code> template will determine the contents of the email
+subject line for ALL emails related to changes.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_comment_vm">Comment.vm</h3>
+<div class="paragraph">
+<p>The <code>Comment.vm</code> template will determine the contents of the email related to
+a user submitting comments on changes.  It is a <code>ChangeEmail</code>: see
+<code>ChangeSubject.vm</code>, <code>ChangeFooter.vm</code> and <code>CommentFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_commentfooter_vm">CommentFooter.vm</h3>
+<div class="paragraph">
+<p>The <code>CommentFooter.vm</code> template will determine the contents of the footer
+text that will be appended to emails related to a user submitting comments on
+changes.  See <code>ChangeSubject.vm</code>, <code>Comment.vm</code> and <code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_footer_vm">Footer.vm</h3>
+<div class="paragraph">
+<p>The <code>Footer.vm</code> template will determine the contents of the footer text
+appended to the end of all outgoing emails after the ChangeFooter and
+CommentFooter.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_merged_vm">Merged.vm</h3>
+<div class="paragraph">
+<p>The <code>Merged.vm</code> template will determine the contents of the email related to
+a change successfully merged to the head.  It is a <code>ChangeEmail</code>: see
+<code>ChangeSubject.vm</code> and <code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_mergefail_vm">MergeFail.vm</h3>
+<div class="paragraph">
+<p>The <code>MergeFail.vm</code> template will determine the contents of the email related
+to a failure upon attempting to merge a change to the head.  It is a
+<code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and <code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_newchange_vm">NewChange.vm</h3>
+<div class="paragraph">
+<p>The <code>NewChange.vm</code> template will determine the contents of the email related
+to a user submitting a new change for review. This includes changes created
+by actions made by the user in the Web UI such as cherry picking a commit or
+reverting a change.  It is a <code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and
+<code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_registernewemail_vm">RegisterNewEmail.vm</h3>
+<div class="paragraph">
+<p>The <code>RegisterNewEmail.vm</code> template will determine the contents of the email
+related to registering new email accounts.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_replacepatchset_vm">ReplacePatchSet.vm</h3>
+<div class="paragraph">
+<p>The <code>ReplacePatchSet.vm</code> template will determine the contents of the email
+related to a user submitting a new patchset for a change.  This includes
+patchsets created by actions made by the user in the Web UI such as editing
+the commit message, cherry picking a commit, or rebasing a change.  It is a
+<code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and <code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_restored_vm">Restored.vm</h3>
+<div class="paragraph">
+<p>The <code>Restored.vm</code> template will determine the contents of the email related
+to a change being restored.  It is a <code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and
+<code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_reverted_vm">Reverted.vm</h3>
+<div class="paragraph">
+<p>The <code>Reverted.vm</code> template will determine the contents of the email related
+to a change being reverted.  It is a <code>ChangeEmail</code>: see <code>ChangeSubject.vm</code> and
+<code>ChangeFooter.vm</code>.</p>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_mail_variables_and_methods">Mail Variables and Methods</h2>
+<div class="sectionbody">
+<div class="paragraph">
+<p>Mail templates can access and display objects currently made available to them
+via the velocity context.  While the base objects are documented here, it is
+possible to call public methods on these objects from templates.  Those methods
+are not documented here since they could change with every release.  As these
+templates are meant to be modified only by a qualified sysadmin, it is accepted
+that writing templates for Gerrit emails is likely to require some basic
+knowledge of the class structure to be useful.  Browsing the source code might
+be necessary for anything more than a minor formatting change.</p>
+</div>
+<div class="sect2">
+<h3 id="_warning">Warning</h3>
+<div class="paragraph">
+<p>Be aware that modifying templates can cause them to fail to parse and therefore
+not send out the actual email, or worse, calling methods on the available
+objects could have internal side effects which would adversely affect the
+health of your Gerrit server and/or data.</p>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_all_outgoingemails">All OutgoingEmails</h3>
+<div class="paragraph">
+<p>All outgoing emails have the following variables available to them:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">$email</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the class constructing the current <code>OutgoingEmail</code>.  With this
+reference it is possible to call any public method on the OutgoingEmail class
+or the current child class inherited from it.</p>
+</div>
+</dd>
+<dt class="hdlist1">$messageClass</dt>
+<dd>
+<div class="paragraph">
+<p>A String containing the messageClass.</p>
+</div>
+</dd>
+<dt class="hdlist1">$StringUtils</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the Apache <code>StringUtils</code> class.  This can be very useful for
+formatting strings.</p>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+<div class="sect2">
+<h3 id="_change_emails">Change Emails</h3>
+<div class="paragraph">
+<p>All change related emails have the following additional variables available to them:</p>
+</div>
+<div class="dlist">
+<dl>
+<dt class="hdlist1">$change</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the current <code>Change</code> object.</p>
+</div>
+</dd>
+<dt class="hdlist1">$changeId</dt>
+<dd>
+<div class="paragraph">
+<p>Id of the current change (a <code>Change.Key</code>).</p>
+</div>
+</dd>
+<dt class="hdlist1">$coverLetter</dt>
+<dd>
+<div class="paragraph">
+<p>The text of the <code>ChangeMessage</code>.</p>
+</div>
+</dd>
+<dt class="hdlist1">$branch</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the branch of this change (a <code>Branch.NameKey</code>).</p>
+</div>
+</dd>
+<dt class="hdlist1">$fromName</dt>
+<dd>
+<div class="paragraph">
+<p>The name of the from user.</p>
+</div>
+</dd>
+<dt class="hdlist1">$projectName</dt>
+<dd>
+<div class="paragraph">
+<p>The name of this change&#8217;s project.</p>
+</div>
+</dd>
+<dt class="hdlist1">$patchSet</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the current <code>PatchSet</code>.</p>
+</div>
+</dd>
+<dt class="hdlist1">$patchSetInfo</dt>
+<dd>
+<div class="paragraph">
+<p>A reference to the current <code>PatchSetInfo</code>.</p>
+</div>
+</dd>
+</dl>
+</div>
+</div>
+</div>
+</div>
+<div class="sect1">
+<h2 id="_see_also">SEE ALSO</h2>
+<div class="sectionbody">
+<div class="ulist">
+<ul>
+<li>
+<p><a href="http://velocity.apache.org/">velocity</a></p>
+</li>
+</ul>
+</div>
+<hr style="
+  height: 2px;
+  color: silver;
+  margin-top: 1.2em;
+  margin-bottom: 0.5em;
+">
+<div class="paragraph">
+<p>Part of <a href="index.html">Gerrit Code Review</a></p>
+</div>
+<div style="position:absolute; right:20px; top:20px;">
+<input type="text" id="docSearch" size="70" />
+<button type="button" id="searchBox">Search</button>
+<script type="text/javascript">
+var f = function() {
+  window.location = '../#/Documentation/' +
+    encodeURIComponent(document.getElementById("docSearch").value);
+}
+document.getElementById("searchBox").onclick = f;
+document.getElementById("docSearch").onkeypress = function(e) {
+  if (13 == (e.keyCode ? e.keyCode : e.which)) {
+    f();
+  }
+}
+</script>
+</div>
+<script type="text/javascript">
+    decorate(document.getElementsByTagName('h1'));
+    decorate(document.getElementsByTagName('h2'));
+    decorate(document.getElementsByTagName('h3'));
+    decorate(document.getElementsByTagName('h4'));
+
+    var divs = document.getElementsByTagName('div');
+    var arr = new Array();
+    var excluded = getExcludedIds();
+    for(var i = 0; i < divs.length; i++) {
+      var d = divs[i];
+      var id = d.getAttribute('id');
+      if (id != null && !(id in excluded)) {
+        arr[arr.length] = d;
+      }
+    }
+    decorate(arr);
+
+    var anchors = document.getElementsByTagName('a');
+    arr = new Array();
+    for(var i = 0; i < anchors.length; i++) {
+      var a = anchors[i];
+      // if the anchor has no id there is no target to
+      // which we can link
+      if (a.getAttribute('id') != null) {
+        // if the anchor is empty there is no content which
+        // can receive the mouseover event, an empty anchor
+        // applies to the element that follows, move the
+        // element that follows into the anchor so that there
+        // is content which can receive the mouseover event
+        if (a.firstChild == null) {
+          var next = a.nextSibling;
+          if (next != null) {
+            next.parentNode.removeChild(next);
+            a.appendChild(next);
+          }
+        }
+        arr[arr.length] = a;
+      }
+    }
+    decorate(arr);
+
+    function decorate(e) {
+      for(var i = 0; i < e.length; i++) {
+        e[i].onmouseover = function (evt) {
+          var element = this;
+          // do nothing if the link icon is currently showing
+          var a = element.firstChild;
+          if (a != null && a instanceof Element
+              && a.getAttribute('id') == 'LINK') {
+            return;
+          }
+
+          // if there is no id there is no target to link to
+          var id = element.getAttribute('id');
+          if (id == null) {
+            return;
+          }
+
+          // create and show a link icon that links to this element
+          a = document.createElement('a');
+          a.setAttribute('id', 'LINK');
+          a.setAttribute('href', '#' + id);
+          a.setAttribute('style', 'position: absolute;'
+              + ' left: ' + (element.offsetLeft - 16 - 2 * 4) + 'px;'
+              + ' padding-left: 4px; padding-right: 4px; padding-top:4px;');
+          var img = document.createElement('img');
+          img.setAttribute('src', 'images/link.png');
+          img.setAttribute('style', 'background-color: #FFFFFF;');
+          a.appendChild(img);
+          element.insertBefore(a, element.firstChild);
+
+          // remove the link icon when the mouse is moved away,
+          // but keep it shown if the mouse is over the element, the link or the icon
+          hide = function(evt) {
+            if (document.elementFromPoint(evt.clientX, evt.clientY) != element
+                && document.elementFromPoint(evt.clientX, evt.clientY) != a
+                && document.elementFromPoint(evt.clientX, evt.clientY) != img
+                && element.contains(a)) {
+              element.removeChild(a);
+            }
+          }
+          element.onmouseout = hide;
+          a.onmouseout = hide;
+          img.onmouseout = hide;
+        }
+      }
+    }
+
+    function getExcludedIds() {
+      var excluded = {};
+      excluded['header'] = true;
+      excluded['toc'] = true;
+      excluded['toctitle'] = true;
+      excluded['content'] = true;
+      excluded['preamble'] = true;
+      excluded['footer'] = true;
+      excluded['footer-text'] = true;
+      return excluded;
+    }
+</script>
+</div>
+</div>
+</div>
+<div id="footer">
+<div id="footer-text">
+Version v2.12.2<br>
+</div>
+</div>
+</body>
+</html>
